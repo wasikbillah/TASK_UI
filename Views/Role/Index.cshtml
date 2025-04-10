@@ -1,0 +1,196 @@
+﻿<div class="container py-4">
+    <h2 class="mb-4">Roles</h2>
+
+    <div class="mb-3">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            Add New Item
+        </button>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel">Add New Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="addName" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        loadTableData();
+
+        function loadTableData() {
+            $.ajax({
+                url: 'http://localhost:26220/api/Role/GetAll',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#dataTable').empty();
+                    if (data && data.length > 0) {
+                        $.each(data, function (index, item) {
+                            let row = `
+                                <tr data-id="${item.id}">
+                                    <td>${index + 1}</td>
+                                    <td>${item.name}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning edit-btn">Edit</button>
+                                        <button class="btn btn-sm btn-danger delete-btn">Delete</button>
+                                    </td>
+                                </tr>`;
+                            $('#dataTable').append(row);
+                        });
+                    } else {
+                        $('#dataTable').append('<tr><td colspan="3">No data available</td></tr>');
+                    }
+                },
+                error: function (err) {
+                    console.error('Error loading data:', err);
+                    $('#dataTable').html('<tr><td colspan="3" class="text-danger">Failed to load data</td></tr>');
+                }
+            });
+        }
+
+        $('#addForm').submit(function (e) {
+            e.preventDefault();
+            const newItem = {
+                name: $('#addName').val()
+            };
+            $.ajax({
+                url: 'http://localhost:26220/api/Role/Add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(newItem),
+                success: function () {
+                    $('#addForm')[0].reset();
+                    $('#addModal').modal('hide');
+                    loadTableData();
+                },
+                error: function (err) {
+                    console.error('Error adding item:', err);
+                    alert("Failed to add item. Check console.");
+                }
+            });
+        });
+
+        $('#dataTable').on('click', '.edit-btn', function () {
+            const row = $(this).closest('tr');
+            const id = row.data('id');
+
+            $.ajax({
+                url: `http://localhost:26220/api/Role/Get/${id}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (item) {
+                    $('#addName').val(item.name);
+                    $('#addModalLabel').text('Edit Item');
+                    $('#addModal').modal('show');
+
+                    $('#addForm').off('submit').submit(function (e) {
+                        e.preventDefault();
+                        const updatedItem = {
+                            id: id,
+                            name: $('#addName').val()
+                        };
+                        $.ajax({
+                            url: 'http://localhost:26220/api/Role/Update',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(updatedItem),
+                            success: function () {
+                                $('#addForm')[0].reset();
+                                $('#addModal').modal('hide');
+                                loadTableData();
+                                $('#addModalLabel').text('Add New Item');
+                                $('#addForm').off('submit').submit(addFormSubmitHandler);
+                            },
+                            error: function (err) {
+                                console.error('Error updating item:', err);
+                                alert("Failed to update item. Check console.");
+                            }
+                        });
+                    });
+                },
+                error: function (err) {
+                    console.error('Error fetching item:', err);
+                    alert("Failed to fetch item data. Check console.");
+                }
+            });
+        });
+
+        $('#dataTable').on('click', '.delete-btn', function () {
+            const row = $(this).closest('tr');
+            const id = row.data('id');
+
+            if (confirm('Are you sure you want to delete this item?')) {
+                $.ajax({
+                    url: `http://localhost:26220/api/Role/Delete/${id}`,
+                    type: 'DELETE',
+                    success: function () {
+                        loadTableData();
+                    },
+                    error: function (err) {
+                        console.error('Error deleting item:', err);
+                        alert("Failed to delete item. Check console.");
+                    }
+                });
+            }
+        });
+
+        const addFormSubmitHandler = function (e) {
+            e.preventDefault();
+            const newItem = {
+                name: $('#addName').val()
+            };
+            $.ajax({
+                url: 'http://localhost:26220/api/Role/Add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(newItem),
+                success: function () {
+                    $('#addForm')[0].reset();
+                    $('#addModal').modal('hide');
+                    loadTableData();
+                },
+                error: function (err) {
+                    console.error('Error adding item:', err);
+                    alert("Failed to add item. Check console.");
+                }
+            });
+        };
+    });
+</script>

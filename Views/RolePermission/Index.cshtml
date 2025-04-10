@@ -1,0 +1,253 @@
+﻿<div class="container py-4">
+    <h2 class="mb-4">Role Permission</h2>
+
+    <div class="mb-3">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            Add New Item
+        </button>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Role</th>
+                        <th>Permission</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel">Add New Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addRoleId" class="form-label">Role</label>
+                        <select class="form-control" id="addRoleId" required>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addPermissionId" class="form-label">Permission</label>
+                        <select class="form-control" id="addPermissionId" required>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+       $(document).ready(function () {
+        loadTableData();
+        loadRoles();
+        loadPermissions();
+
+        function loadTableData() {
+            $.ajax({
+                url: 'http://localhost:26220/api/RolePermission/GetAll',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#dataTable').empty();
+                    if (data && data.length > 0) {
+                        $.each(data, function (index, item) {
+                            let row = `
+                                <tr data-id="${item.id}">
+                                    <td>${index + 1}</td>
+                                    <td>${item.roleName}</td>
+                                    <td>${item.permissionName}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning edit-btn">Edit</button>
+                                        <button class="btn btn-sm btn-danger delete-btn">Delete</button>
+                                    </td>
+                                </tr>`;
+                            $('#dataTable').append(row);
+                        });
+                    } else {
+                        $('#dataTable').append('<tr><td colspan="4">No data available</td></tr>');
+                    }
+                },
+                error: function (err) {
+                    console.error('Error loading data:', err);
+                    $('#dataTable').html('<tr><td colspan="4" class="text-danger">Failed to load data</td></tr>');
+                }
+            });
+        }
+
+        // Updated Add Form submission
+        $('#addForm').submit(function (e) {
+            e.preventDefault();
+            const newItem = {
+                roleId: parseInt($('#addRoleId').val()),
+                permissionId : parseInt($('#addPermissionId').val())
+            };
+            $.ajax({
+                url: 'http://localhost:26220/api/RolePermission/Add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(newItem),
+                success: function () {
+                    $('#addForm')[0].reset();
+                    $('#addModal').modal('hide');
+                    loadTableData();
+                },
+                error: function (err) {
+                    console.error('Error adding item:', err);
+                    alert("Failed to add item. Check console.");
+                }
+            });
+        });
+
+        // Updated Edit functionality
+        $('#dataTable').on('click', '.edit-btn', function () {
+            const row = $(this).closest('tr');
+            const id = row.data('id');
+
+            $.ajax({
+                url: `http://localhost:26220/api/RolePermission/Get/${id}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (item) {
+                    loadRoles(item.roleId);
+                    loadPermissions(item.permissionId);
+                    $('#addModalLabel').text('Edit Item');
+                    $('#addModal').modal('show');
+
+                    $('#addForm').off('submit').submit(function (e) {
+                        e.preventDefault();
+                        const updatedItem = {
+                            id: id,
+                            roleId: parseInt($('#addRoleId').val()),
+                            permissionId: parseInt($('#addPermissionId').val()),
+                        };
+                        $.ajax({
+                            url: 'http://localhost:26220/api/RolePermission/Update',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(updatedItem),
+                            success: function () {
+                                $('#addForm')[0].reset();
+                                $('#addModal').modal('hide');
+                                loadTableData();
+                                $('#addModalLabel').text('Add New Item');
+                                $('#addForm').off('submit').submit(addFormSubmitHandler);
+                            },
+                            error: function (err) {
+                                console.error('Error updating item:', err);
+                                alert("Failed to update item. Check console.");
+                            }
+                        });
+                    });
+                },
+                error: function (err) {
+                    console.error('Error fetching item:', err);
+                    alert("Failed to fetch item data. Check console.");
+                }
+            });
+        });
+
+        // Delete functionality (remains the same as it doesn't need role information)
+        $('#dataTable').on('click', '.delete-btn', function () {
+            const row = $(this).closest('tr');
+            const id = row.data('id');
+
+            if (confirm('Are you sure you want to delete this item?')) {
+                $.ajax({
+                    url: `http://localhost:26220/api/RolePermission/Delete/${id}`,
+                    type: 'DELETE',
+                    success: function () {
+                        loadTableData();
+                    },
+                    error: function (err) {
+                        console.error('Error deleting item:', err);
+                        alert("Failed to delete item. Check console.");
+                    }
+                });
+            }
+        });
+
+        // Updated addFormSubmitHandler
+        const addFormSubmitHandler = function (e) {
+            e.preventDefault();
+            const newItem = {
+                roleId: parseInt($('#addRoleId').val()),
+                permissionId: parseInt($('#addPermissionId').val())
+            };
+            $.ajax({
+                url: 'http://localhost:26220/api/RolePermission/Add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(newItem),
+                success: function () {
+                    $('#addForm')[0].reset();
+                    $('#addModal').modal('hide');
+                    loadTableData();
+                },
+                error: function (err) {
+                    console.error('Error adding item:', err);
+                    alert("Failed to add item. Check console.");
+                }
+            });
+        };
+
+        function loadRoles(selectedRoleId = null) {
+            $.ajax({
+                url: 'http://localhost:26220/api/Role/GetAll',
+                type: 'GET',
+                dataType: 'json',
+                success: function (roles) {
+                    $('#addRoleId').empty();
+                    $.each(roles, function (index, role) {
+                        $('#addRoleId').append(
+                            `<option value="${role.id}" ${role.id === selectedRoleId ? 'selected' : ''}>${role.name}</option>`
+                        );
+                    });
+                },
+                error: function (err) {
+                    console.error('Error loading roles:', err);
+                }
+            });
+        }
+
+        function loadPermissions(selectedPermissionId = null) {
+            $.ajax({
+                url: 'http://localhost:26220/api/Permission/GetAll',
+                type: 'GET',
+                dataType: 'json',
+                success: function (permissions) {
+                    $('#addPermissionId').empty();
+                    $.each(permissions, function (index, permission) {
+                        $('#addPermissionId').append(
+                            `<option value="${permission.id}" ${permission.id === selectedPermissionId ? 'selected' : ''}>${permission.name}</option>`
+                        );
+                    });
+                },
+                error: function (err) {
+                    console.error('Error loading permissions:', err);
+                }
+            });
+        }
+    });
+</script>

@@ -1,0 +1,260 @@
+﻿<div class="container py-4">
+    <h2 class="mb-4">Tasks</h2>
+
+    <div class="mb-3">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            Add New Task
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Assigned User</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel">Add New Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userId" class="form-label">Assigned User</label>
+                        <select class="form-control" id="userId" required></select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="deadline" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="deadline" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusId" class="form-label">Status</label>
+                        <select class="form-control" id="statusId" required></select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    $(document).ready(function () {
+        loadTableData();
+        loadUsers();
+        loadStatus();
+
+        function loadTableData() {
+            $.ajax({
+                url: 'http://localhost:26220/api/Task/GetAll',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#dataTable').empty();
+                    if (data && data.length > 0) {
+                        $.each(data, function (index, item) {
+                            let row = `
+                                <tr data-id="${item.id}">
+                                    <td>${index + 1}</td>
+                                    <td>${item.title}</td>
+                                    <td>${item.description}</td>
+                                    <td>${item.userName}</td>
+                                    <td>${item.startDate}</td>
+                                    <td>${item.deadline}</td>
+                                    <td>${item.status}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning edit-btn">Edit</button>
+                                        <button class="btn btn-sm btn-danger delete-btn">Delete</button>
+                                    </td>
+                                </tr>`;
+                            $('#dataTable').append(row);
+                        });
+                    } else {
+                        $('#dataTable').append('<tr><td colspan="8">No data available</td></tr>');
+                    }
+                },
+                error: function (err) {
+                    console.error('Error loading data:', err);
+                    $('#dataTable').html('<tr><td colspan="8" class="text-danger">Failed to load data</td></tr>');
+                }
+            });
+        }
+
+        function loadUsers(selectedUserId = null) {
+            $.ajax({
+                url: 'http://localhost:26220/api/User/GetAll',
+                type: 'GET',
+                dataType: 'json',
+                success: function (users) {
+                    $('#userId').empty();
+                    $.each(users, function (index, user) {
+                        $('#userId').append(
+                            `<option value="${user.id}" ${user.id === selectedUserId ? 'selected' : ''}>${user.name}</option>`
+                        );
+                    });
+                },
+                error: function (err) {
+                    console.error('Error loading users:', err);
+                }
+            });
+        }
+
+        function loadStatus(selectedStatusId = null) {
+            $.ajax({
+                url: 'http://localhost:26220/api/TaskStatus/GetAll',
+                type: 'GET',
+                dataType: 'json',
+                success: function (statuses) {
+                    debugger;
+                    $('#statusId').empty();
+                    $.each(statuses, function (index, status) {
+                        $('#statusId').append(
+                            `<option value="${status.id}" ${status.id === selectedStatusId ? 'selected' : ''}>${status.name}</option>`
+                        );
+                    });
+                },
+                error: function (err) {
+                    console.error('Error loading status:', err);
+                }
+            });
+        }
+
+        $('#addForm').submit(function (e) {
+            e.preventDefault();
+            const newTask = {
+                title: $('#title').val(),
+                description: $('#description').val(),
+                assignedUserId: parseInt($('#userId').val()),
+                startDate: $('#startDate').val(),
+                deadline: $('#deadline').val(),
+                statusId: $('#statusId').val()
+            };
+
+            alert(JSON.stringify(newTask));
+
+            $.ajax({
+                url: 'http://localhost:26220/api/Task/Add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(newTask),
+                success: function () {
+                    $('#addForm')[0].reset();
+                    $('#addModal').modal('hide');
+                    loadTableData();
+                },
+                error: function (err) {
+                    console.error('Error adding task:', err);
+                    alert("Failed to add task. Check console.");
+                }
+            });
+        });
+
+        $('#dataTable').on('click', '.edit-btn', function () {
+            const row = $(this).closest('tr');
+            const id = row.data('id');
+
+            $.ajax({
+                url: `http://localhost:26220/api/Task/Get/${id}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (item) {
+                    $('#title').val(item.title);
+                    $('#description').val(item.description);
+                    loadUsers(item.userId);
+                    $('#startDate').val(item.startDate.split('T')[0]);
+                    $('#deadline').val(item.deadline.split('T')[0]);
+                    $('#statusId').val(item.statusId);
+                    $('#addModalLabel').text('Edit Task');
+                    $('#addModal').modal('show');
+
+                    $('#addForm').off('submit').submit(function (e) {
+                        e.preventDefault();
+                        const updatedTask = {
+                            id: id,
+                            title: $('#title').val(),
+                            description: $('#description').val(),
+                            assignedUserId: $('#userId').val(),
+                            startDate: $('#startDate').val(),
+                            deadline: $('#deadline').val(),
+                            statusId: $('#statusId').val()
+                        };
+                        $.ajax({
+                            url: 'http://localhost:26220/api/Task/Update',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(updatedTask),
+                            success: function () {
+                                $('#addForm')[0].reset();
+                                $('#addModal').modal('hide');
+                                loadTableData();
+                                $('#addModalLabel').text('Add New Task');
+                            },
+                            error: function (err) {
+                                console.error('Error updating task:', err);
+                                alert("Failed to update task. Check console.");
+                            }
+                        });
+                    });
+                },
+                error: function (err) {
+                    console.error('Error fetching task:', err);
+                    alert("Failed to fetch task data. Check console.");
+                }
+            });
+        });
+
+        $('#dataTable').on('click', '.delete-btn', function () {
+            const row = $(this).closest('tr');
+            const id = row.data('id');
+
+            if (confirm('Are you sure you want to delete this task?')) {
+                $.ajax({
+                    url: `http://localhost:26220/api/Task/Delete/${id}`,
+                    type: 'DELETE',
+                    success: function () {
+                        loadTableData();
+                    },
+                    error: function (err) {
+                        console.error('Error deleting task:', err);
+                        alert("Failed to delete task. Check console.");
+                    }
+                });
+            }
+        });
+    });
+</script>
