@@ -60,12 +60,26 @@
 
 <script>
        $(document).ready(function () {
+        
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert("You're not logged in. Redirecting to login page...");
+            window.location.href = "/Login/Index";
+            return;
+        }
+
+        const ajaxAuth = (options) => {
+            options.headers = options.headers || {};
+            options.headers['Authorization'] = 'Bearer ' + token;
+            $.ajax(options);
+        };
+
         loadTableData();
         loadRoles();
         loadPermissions();
 
         function loadTableData() {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/RolePermission/GetAll',
                 type: 'GET',
                 dataType: 'json',
@@ -103,7 +117,7 @@
                 roleId: parseInt($('#addRoleId').val()),
                 permissionId : parseInt($('#addPermissionId').val())
             };
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/RolePermission/Add',
                 type: 'POST',
                 contentType: 'application/json',
@@ -125,7 +139,7 @@
             const row = $(this).closest('tr');
             const id = row.data('id');
 
-            $.ajax({
+            ajaxAuth({
                 url: `http://localhost:26220/api/RolePermission/Get/${id}`,
                 type: 'GET',
                 dataType: 'json',
@@ -142,7 +156,7 @@
                             roleId: parseInt($('#addRoleId').val()),
                             permissionId: parseInt($('#addPermissionId').val()),
                         };
-                        $.ajax({
+                        ajaxAuth({
                             url: 'http://localhost:26220/api/RolePermission/Update',
                             type: 'POST',
                             contentType: 'application/json',
@@ -174,7 +188,7 @@
             const id = row.data('id');
 
             if (confirm('Are you sure you want to delete this item?')) {
-                $.ajax({
+                ajaxAuth({
                     url: `http://localhost:26220/api/RolePermission/Delete/${id}`,
                     type: 'DELETE',
                     success: function () {
@@ -195,7 +209,7 @@
                 roleId: parseInt($('#addRoleId').val()),
                 permissionId: parseInt($('#addPermissionId').val())
             };
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/RolePermission/Add',
                 type: 'POST',
                 contentType: 'application/json',
@@ -213,7 +227,7 @@
         };
 
         function loadRoles(selectedRoleId = null) {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/Role/GetAll',
                 type: 'GET',
                 dataType: 'json',
@@ -232,7 +246,7 @@
         }
 
         function loadPermissions(selectedPermissionId = null) {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/Permission/GetAll',
                 type: 'GET',
                 dataType: 'json',

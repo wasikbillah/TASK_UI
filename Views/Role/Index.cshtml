@@ -52,10 +52,24 @@
 
 <script>
     $(document).ready(function () {
+
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert("You're not logged in. Redirecting to login page...");
+            window.location.href = "/Login/Index";
+            return;
+        }
+
+        const ajaxAuth = (options) => {
+            options.headers = options.headers || {};
+            options.headers['Authorization'] = 'Bearer ' + token;
+            $.ajax(options);
+        };
+
         loadTableData();
 
         function loadTableData() {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/Role/GetAll',
                 type: 'GET',
                 dataType: 'json',
@@ -90,7 +104,7 @@
             const newItem = {
                 name: $('#addName').val()
             };
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/Role/Add',
                 type: 'POST',
                 contentType: 'application/json',
@@ -111,7 +125,7 @@
             const row = $(this).closest('tr');
             const id = row.data('id');
 
-            $.ajax({
+            ajaxAuth({
                 url: `http://localhost:26220/api/Role/Get/${id}`,
                 type: 'GET',
                 dataType: 'json',
@@ -126,7 +140,7 @@
                             id: id,
                             name: $('#addName').val()
                         };
-                        $.ajax({
+                        ajaxAuth({
                             url: 'http://localhost:26220/api/Role/Update',
                             type: 'POST',
                             contentType: 'application/json',
@@ -157,7 +171,7 @@
             const id = row.data('id');
 
             if (confirm('Are you sure you want to delete this item?')) {
-                $.ajax({
+               ajaxAuth({
                     url: `http://localhost:26220/api/Role/Delete/${id}`,
                     type: 'DELETE',
                     success: function () {
@@ -176,7 +190,7 @@
             const newItem = {
                 name: $('#addName').val()
             };
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/Role/Add',
                 type: 'POST',
                 contentType: 'application/json',

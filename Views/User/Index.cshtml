@@ -16,7 +16,6 @@
                         <th>#</th>
                         <th>Name</th>
                         <th>Role</th>
-                        <th>Permission</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -60,11 +59,25 @@
 
 <script>
        $(document).ready(function () {
+
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert("You're not logged in. Redirecting to login page...");
+            window.location.href = "/Login/Index";
+            return;
+        }
+
+        const ajaxAuth = (options) => {
+            options.headers = options.headers || {};
+            options.headers['Authorization'] = 'Bearer ' + token;
+            $.ajax(options);
+        };
+
         loadTableData();
         loadRoles();
 
         function loadTableData() {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/User/GetAll',
                 type: 'GET',
                 dataType: 'json',
@@ -102,7 +115,7 @@
                 name: $('#addName').val(),
                 roleId: parseInt($('#addRoleId').val())  // Add roleId
             };
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/User/Add',
                 type: 'POST',
                 contentType: 'application/json',
@@ -124,13 +137,13 @@
             const row = $(this).closest('tr');
             const id = row.data('id');
 
-            $.ajax({
+            ajaxAuth({
                 url: `http://localhost:26220/api/User/Get/${id}`,
                 type: 'GET',
                 dataType: 'json',
                 success: function (item) {
                     $('#addName').val(item.name);
-                    loadRoles(item.roleId);  // Load roles and pre-select current role
+                    loadRoles(item.roleId);
                     $('#addModalLabel').text('Edit Item');
                     $('#addModal').modal('show');
 
@@ -141,7 +154,7 @@
                             name: $('#addName').val(),
                             roleId: parseInt($('#addRoleId').val())  // Include roleId in update
                         };
-                        $.ajax({
+                        ajaxAuth({
                             url: 'http://localhost:26220/api/User/Update',
                             type: 'POST',
                             contentType: 'application/json',
@@ -173,7 +186,7 @@
             const id = row.data('id');
 
             if (confirm('Are you sure you want to delete this item?')) {
-                $.ajax({
+                ajaxAuth({
                     url: `http://localhost:26220/api/User/Delete/${id}`,
                     type: 'DELETE',
                     success: function () {
@@ -194,7 +207,7 @@
                 name: $('#addName').val(),
                 roleId: parseInt($('#addRoleId').val())
             };
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/User/Add',
                 type: 'POST',
                 contentType: 'application/json',
@@ -212,7 +225,7 @@
         };
 
         function loadRoles(selectedRoleId = null) {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/Role/GetAll',
                 type: 'GET',
                 dataType: 'json',
@@ -231,8 +244,8 @@
         }
 
         function loadRolePermission(selectedRoleId = null) {
-            $.ajax({
-                url: 'http://localhost:26220/api/Role/GetAll',
+            ajaxAuth({
+                url: 'http://localhost:26220/api/RolePermission/GetAll',
                 type: 'GET',
                 dataType: 'json',
                 success: function (roles) {

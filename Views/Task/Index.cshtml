@@ -75,12 +75,26 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
     $(document).ready(function () {
+
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert("You're not logged in. Redirecting to login page...");
+            window.location.href = "/Login/Index";
+            return;
+        }
+
+        const ajaxAuth = (options) => {
+            options.headers = options.headers || {};
+            options.headers['Authorization'] = 'Bearer ' + token;
+            $.ajax(options);
+        };
+
         loadTableData();
         loadUsers();
         loadStatus();
 
         function loadTableData() {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/Task/GetAll',
                 type: 'GET',
                 dataType: 'json',
@@ -116,7 +130,7 @@
         }
 
         function loadUsers(selectedUserId = null) {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/User/GetAll',
                 type: 'GET',
                 dataType: 'json',
@@ -135,7 +149,7 @@
         }
 
         function loadStatus(selectedStatusId = null) {
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/TaskStatus/GetAll',
                 type: 'GET',
                 dataType: 'json',
@@ -165,9 +179,7 @@
                 statusId: $('#statusId').val()
             };
 
-            alert(JSON.stringify(newTask));
-
-            $.ajax({
+            ajaxAuth({
                 url: 'http://localhost:26220/api/Task/Add',
                 type: 'POST',
                 contentType: 'application/json',
@@ -188,7 +200,7 @@
             const row = $(this).closest('tr');
             const id = row.data('id');
 
-            $.ajax({
+            ajaxAuth({
                 url: `http://localhost:26220/api/Task/Get/${id}`,
                 type: 'GET',
                 dataType: 'json',
@@ -213,7 +225,7 @@
                             deadline: $('#deadline').val(),
                             statusId: $('#statusId').val()
                         };
-                        $.ajax({
+                        ajaxAuth({
                             url: 'http://localhost:26220/api/Task/Update',
                             type: 'POST',
                             contentType: 'application/json',
@@ -243,7 +255,7 @@
             const id = row.data('id');
 
             if (confirm('Are you sure you want to delete this task?')) {
-                $.ajax({
+                ajaxAuth({
                     url: `http://localhost:26220/api/Task/Delete/${id}`,
                     type: 'DELETE',
                     success: function () {
