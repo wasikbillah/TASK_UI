@@ -39,6 +39,11 @@
                         <label for="addName" class="form-label">Name</label>
                         <input type="text" class="form-control" id="addName" required />
                     </div>
+                    <div class="mb-3" id="passwordGroup">
+                        <label for="addPassword" class="form-label">Password</label>
+                        <input type="text" class="form-control" id="addPassword" required />
+                    </div>
+
                     <div class="mb-3">
                         <label for="addRoleId" class="form-label">Role</label>
                         <select class="form-control" id="addRoleId" required>
@@ -111,10 +116,14 @@
         // Updated Add Form submission
         $('#addForm').submit(function (e) {
             e.preventDefault();
+            $('#passwordGroup').show();
+
             const newItem = {
                 name: $('#addName').val(),
-                roleId: parseInt($('#addRoleId').val())  // Add roleId
+                roleId: parseInt($('#addRoleId').val()),
+                password :$('#addPassword').val(),
             };
+
             ajaxAuth({
                 url: 'http://localhost:26220/api/User/Add',
                 type: 'POST',
@@ -136,7 +145,7 @@
         $('#dataTable').on('click', '.edit-btn', function () {
             const row = $(this).closest('tr');
             const id = row.data('id');
-
+            $('#passwordGroup').hide();
             ajaxAuth({
                 url: `http://localhost:26220/api/User/Get/${id}`,
                 type: 'GET',
@@ -152,7 +161,7 @@
                         const updatedItem = {
                             id: id,
                             name: $('#addName').val(),
-                            roleId: parseInt($('#addRoleId').val())  // Include roleId in update
+                            roleId: parseInt($('#addRoleId').val())
                         };
                         ajaxAuth({
                             url: 'http://localhost:26220/api/User/Update',
@@ -165,6 +174,7 @@
                                 loadTableData();
                                 $('#addModalLabel').text('Add New Item');
                                 $('#addForm').off('submit').submit(addFormSubmitHandler);
+                                $('#passwordGroup').show();
                             },
                             error: function (err) {
                                 console.error('Error updating item:', err);
