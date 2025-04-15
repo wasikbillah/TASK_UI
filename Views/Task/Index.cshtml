@@ -207,7 +207,7 @@
                 success: function (item) {
                     $('#title').val(item.title);
                     $('#description').val(item.description);
-                    loadUsers(item.userId);
+                    $('#userId').val(item.assignedUserId);
                     $('#startDate').val(item.startDate.split('T')[0]);
                     $('#deadline').val(item.deadline.split('T')[0]);
                     $('#statusId').val(item.statusId);
